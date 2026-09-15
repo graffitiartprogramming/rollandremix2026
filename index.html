@@ -1,0 +1,412 @@
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="js/aframe.min.js"></script>
+    <script src="js/aframe-extras.min.js"></script>
+    <script src="js/mindar-image-aframe.prod.js"></script>
+    <script src="js/animate-png.js"></script>
+        <script src="js/tinc-animate-png.js"></script>
+            <script src="js/rb-animate-png1.js"></script>
+            <script src="js/rb-animate-png2.js"></script>
+            <script src="js/ncc-animate-png.js"></script>
+            <script src="js/ncc-animate-png1.js"></script>
+
+<script>
+  const galleryData = {
+    AR1: [
+      { image: "assets/gallery/rbgallery/rbgallery_01.png", title: "Slime Attack!", description: "On our first days of our art camp, we experimented with making DIY slime, and we used the colours to create an abstract background." },
+      { image: "assets/gallery/rbgallery/rbgallery_02.png", title: "Stamp stamp stamp!", description: "Students created unique stamps and added them to our wall scroll." },
+      { image: "assets/gallery/rbgallery/rbgallery_03.png", title: "Graffiti Writin and Tags", description: "Our own graffiti artists came in to help teach the basics of letter shapes and tags" }
+    ],
+    AR2: [
+      { image: "assets/gallery/tincgallery/tincgallery_01.png", title: "Tie Dye Lessons", description: "Participants first experimented with collaborative tie dye techniques, each contributing to a group effort" },
+      { image: "assets/gallery/tincgallery/tincgallery_02.png", title: "Texture Techniques", description: "Folks tried out different ways of creating textures such as sponges, brushes, rollers, and stamps" },
+      { image: "assets/gallery/tincgallery/tincgallery_03.png", title: "Quotes and Youth Voices", description: "GAP staff encouraged folks to share their thoughts and experiences, as well as personal truths they'd like to share!" },
+      { image: "assets/gallery/tincgallery/tincgallery_04.png", title: "Textiles textiles textiles!", description: "among the crafts we explored, textiles stood out as an important medium for self-expression." },
+      { image: "assets/gallery/tincgallery/tincgallery_05.png", title: "Do the worm!", description: "Our post-processing crew helped bring the AR experience to life! Tools like Adobe Photoshop and After Effects were crucial to creating some of these animations." }
+    ],
+    AR3: [
+      { image: "assets/gallery/nccgallery/nccgallery_01.png", title: "Layouts and Designs", description: "Our artists helped layout text and designs for participants to colour in" },
+      { image: "assets/gallery/nccgallery/nccgallery_02.png", title: "Stitchin it!", description: "Folks combined projects, new and old, and collaged them onto our wall scroll" },
+      { image: "assets/gallery/nccgallery/nccgallery_03.png", title: "Post-Processing!", description: "After all our projects were completed, the next step was the behind-the-scenes work to make the magic AR experience." },
+      { image: "assets/gallery/nccgallery/nccgallery_04.png", title: "Augmented Reality & Coding", description: "Code was written in Javascript with the help of mindAR and a-frame repositories! These helped make the AR experience possible through their pre-coded languages." }
+    ] 
+  };
+</script>
+
+<script>
+  AFRAME.registerComponent("gallery", {
+    schema: { galleryId: {type: "string"} },
+    init: function () {
+      const el = this.el;
+      const galleryId = this.data.galleryId;
+      const images = galleryData[galleryId];
+
+      if (!images || images.length === 0) {
+        console.warn("No gallery found for:", galleryId);
+        return;
+      }
+
+      let currentIndex = 0;
+      const imageEl = el.querySelector(".gallery-image");
+      const titleEl = el.querySelector(".gallery-title");
+      const descriptionEl = el.querySelector(".gallery-description");
+      const counterEl = el.querySelector(".gallery-counter");
+
+      function updateImage() {
+        imageEl.setAttribute("src", images[currentIndex].image);
+        titleEl.setAttribute("value", images[currentIndex].title);
+        descriptionEl.setAttribute("value", images[currentIndex].description);
+        if (counterEl) {
+          counterEl.setAttribute("value", (currentIndex + 1) + " / " + images.length);
+        }
+      }
+
+      el.querySelector(".gallery-next").addEventListener("click", function () {
+        currentIndex = (currentIndex + 1) % images.length;
+        updateImage();
+      });
+
+      el.querySelector(".gallery-prev").addEventListener("click", function () {
+        currentIndex = (currentIndex - 1 + images.length) % images.length;
+        updateImage();
+      });
+
+      updateImage();
+    }
+  });
+</script>
+
+<script>
+  AFRAME.registerComponent("gallery-toggle", {
+    init: function () {
+      const button = this.el;
+      function toggleGallery() {
+        const gallerySelector = button.getAttribute("data-gallery");
+        const gallery = document.querySelector(gallerySelector);
+        if (!gallery) return;
+        const currentVisibility = gallery.getAttribute("visible");
+        gallery.setAttribute("visible", !currentVisibility);
+      }
+
+      button.addEventListener("mousedown", function (event) {
+        event.stopPropagation();
+        toggleGallery();
+      });
+
+      button.addEventListener("touchstart", function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        toggleGallery();
+      });
+    }
+  });
+</script>
+
+<style>
+/* AR Overlay Container (Centred at top) */
+.ar-overlay-container {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999; /* Keeps buttons above WebGL canvas & MindAR UI */
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+  width: max-content;
+  max-width: 92vw;
+}
+
+/* Matching Slate Glassmorphism Button Style */
+.ar-overlay-btn {
+  background: rgba(30, 41, 59, 0.85); /* Slate background matching about.html */
+  color: #f8fafc;
+  padding: 10px 16px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-weight: 600;
+  font-size: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  touch-action: manipulation;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+/* Hover & Active States */
+.ar-overlay-btn:hover {
+  background: rgba(51, 65, 85, 0.95);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+}
+
+.ar-overlay-btn:active {
+  transform: scale(0.96);
+  background: #3b82f6; /* Accent blue highlight matching primary buttons */
+  border-color: transparent;
+}
+
+</style>
+
+  </head>
+
+  <body>
+
+<!-- HTML: Add this directly above or below your <a-scene> -->
+<div class="ar-overlay-container">
+  <a href="https://www.graffitigallery.ca/" target="_blank" class="ar-overlay-btn">GRAFFITIGALLERY.CA</a>
+</div>
+
+<img src="assets/rollandremix.gif" alt="rollandremix" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 200px; height: 50px; z-index: 9999;" />
+    <a-scene mindar-image="
+      imageTargetSrc: assets/image-targets/rollandremix.mind;
+      maxTrack: 1;
+      filterMinCF: 0.01;
+      filterBeta: 10;
+    "
+    color-space="sRGB"
+    renderer="colorManagement: true, physicallyCorrectLights"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false">
+
+      <a-assets>
+  <!-- Offscreen Canvases (512x512 for mobile WebGL stability) -->
+  <canvas id="textCanvas1" width="512" height="512"></canvas>
+  <canvas id="textCanvas2" width="512" height="512"></canvas>
+  <canvas id="textCanvas3" width="512" height="512"></canvas>
+  <canvas id="textCanvas4" width="512" height="512"></canvas>
+  <canvas id="textCanvas5" width="512" height="512"></canvas>
+  <canvas id="textCanvas6" width="512" height="512"></canvas>
+  <canvas id="textCanvas7" width="512" height="512"></canvas>
+  <canvas id="textCanvas8" width="512" height="512"></canvas>
+  <canvas id="textCanvas9" width="512" height="512"></canvas>
+  <canvas id="textCanvas10" width="512" height="512"></canvas>
+  <canvas id="textCanvas11" width="512" height="512"></canvas>
+  <canvas id="textCanvas12" width="512" height="512"></canvas>
+</a-assets>
+
+      <a-camera
+        position="0 0 0"
+        look-controls="enabled: false"
+        cursor="fuse: false; rayOrigin: mouse;"
+        raycaster="near: 10; far: 10000; objects: .clickable"
+      ></a-camera>
+
+
+  <!-- AR1 ENTITY - RB -->
+
+
+<a-entity id="AR1" mindar-image-target="targetIndex: 1">
+  
+  <!-- Empty container for the hexagon spawner -->
+
+  <a-entity 
+    rb-animate-png1="minDuration: 1500; maxDuration: 4000; spawnInterval: 600; maxSimultaneous: 8"
+    position="0.01 0.01 0" 
+    scale="0.95 0.8 0">
+  </a-entity>
+
+  <!-- Gallery Entity -->
+        <!-- MODE TOGGLE BUTTON -->
+        <a-entity position="0 -0.7 0.05" scale="0.5 0.5 0.5">
+          <a-plane
+            width="0.8"
+            height="0.25"
+            color="#333333"
+            material="shader: flat; side: double"
+            class="clickable"
+            data-gallery="#AR1Gallery"
+            gallery-toggle
+          ></a-plane>
+
+          <a-text
+            value="Click to view GALLERY"
+            color="#FFFFFF"
+            align="center"
+            width="1.5"
+            position="0 0 0.05"
+          ></a-text>
+        </a-entity>
+
+
+
+        <!-- GALLERY -->
+        <a-entity
+          id="AR1Gallery"
+          position="0 0 0.02"
+          visible="false"
+          gallery="galleryId: AR1"
+        >
+          <a-plane
+            width="0.8"
+            height="0.8"
+            color="#111111"
+            material="shader: flat; side: double"
+          ></a-plane>
+
+          <a-image class="gallery-image" width="0.5" height="0.4" position="0 0.2 0.02"></a-image>
+
+          <a-plane class="gallery-prev clickable" width="0.1" height="0.1" color="#333333" material="shader: flat; side: double" position="-0.4 0.2 0.08">
+            <a-text value="<" color="#FFFFFF" align="center" width="1" position="0 0 0.01"></a-text>
+          </a-plane>
+
+          <a-plane class="gallery-next clickable" width="0.1" height="0.1" color="#333333" material="shader: flat; side: double" position="0.4 0.2 0.08">
+            <a-text value=">" color="#FFFFFF" align="center" width="1" position="0 0 0.01"></a-text>
+          </a-plane>
+
+          <a-text class="gallery-title" color="#FFFFFF" align="center" width="1.2" position="0 -0.1 0.04" scale="0.5 0.5 0.5"></a-text>
+          <a-text class="gallery-description" color="#FFFFFF" align="center" width="1.05" wrap-count="40" position="0 -0.2 0.04" scale="0.5 0.5 0.5"></a-text>
+          <a-text class="gallery-counter" color="#AAAAAA" align="center" width="0.5" position="0 -0.72 0.04" scale="0.5 0.5 0.5"></a-text>
+        </a-entity>
+</a-entity>
+
+  <!-- AR2 ENTITY - TINC -->
+    <a-entity id="AR2" mindar-image-target="targetIndex: 2">
+  
+  <!-- Empty container for the hexagon spawner -->
+ <a-image tinc-animate-png="" position= "0 0.05 0"scale="1.5 0.6 0.5" geometry=""></a-image>
+
+
+  <!-- Secondary spawner/image -->
+  <a-entity 
+    animate-png="" 
+    scale="0.2 0.1 0.1" 
+    position="0 -0.5 0">
+  </a-entity>
+
+  <!-- Gallery Entity -->
+        <!-- MODE TOGGLE BUTTON -->
+        <a-entity position="0 -0.5 0.05" scale="0.5 0.5 0.5">
+          <a-plane
+            width="0.7"
+            height="0.15"
+            color="#333333"
+            material="shader: flat; side: double"
+            class="clickable"
+            data-gallery="#AR2Gallery"
+            gallery-toggle
+          ></a-plane>
+
+          <a-text
+            value="Click to view GALLERY"
+            color="#FFFFFF"
+            align="center"
+            width="1.5"
+            position="0 0 0.05"
+          ></a-text>
+        </a-entity>
+
+
+
+        <!-- GALLERY -->
+        <a-entity
+          id="AR2Gallery"
+          position="0 0 0.02"
+          visible="false"
+          gallery="galleryId: AR2"
+        >
+          <a-plane
+            width="0.7"
+            height="0.7"
+            color="#111111"
+            material="shader: flat; side: double"
+          ></a-plane>
+
+          <a-image class="gallery-image" width="0.4" height="0.3" position="0 0.1 0.02"></a-image>
+
+          <a-plane class="gallery-prev clickable" width="0.05" height="0.1" color="#333333" material="shader: flat; side: double" position="-0.2 0.1 0.08">
+            <a-text value="<" color="#FFFFFF" align="center" width="1" position="0 0 0.01"></a-text>
+          </a-plane>
+
+          <a-plane class="gallery-next clickable" width="0.05" height="0.1" color="#333333" material="shader: flat; side: double" position="0.2 0.1 0.08">
+            <a-text value=">" color="#FFFFFF" align="center" width="1" position="0 0 0.01"></a-text>
+          </a-plane>
+
+          <a-text class="gallery-title" color="#FFFFFF" align="center" width="1.2" position="0 -0.1 0.04" scale="0.5 0.5 0.5"></a-text>
+          <a-text class="gallery-description" color="#FFFFFF" align="center" width="1.05" wrap-count="40" position="0 -0.2 0.04" scale="0.5 0.5 0.5"></a-text>
+          <a-text class="gallery-counter" color="#AAAAAA" align="center" width="0.5" position="0 -0.3 0.04" scale="0.5 0.5 0.5"></a-text>
+        </a-entity>
+</a-entity>
+           
+      <!--------------- END OF IMAGE TARGET --------------------->
+
+
+
+
+
+      <!-- AR3 ENTITY - NCC -->
+      <a-entity id="AR3" mindar-image-target="targetIndex: 0">
+        <a-entity id="infoCardAR3" class="info-card" position="0 0 0">
+          <!-- Card Background -->
+          <!-- Text Canvas Plane (Explicitly bound to #textCanvas3) -->
+
+
+
+   <a-image ncc-animate-png="" position="0.02 0.0 0" 
+    scale="1.05 1.05 0" geometry=""></a-image>
+   <a-image ncc-animate-png1="" position= "0 1 0"scale="2 0.5 0.5" geometry=""></a-image>
+        </a-entity>
+
+    <!-- Gallery Entity -->
+        <!-- MODE TOGGLE BUTTON -->
+        <a-entity position="0 -0.8 0.1" scale="2 2 2">
+          <a-plane
+            width="0.8"
+            height="0.25"
+            color="#333333"
+            material="shader: flat; side: double"
+            class="clickable"
+            data-gallery="#AR3Gallery"
+            gallery-toggle
+          ></a-plane>
+
+          <a-text
+            value="Click to view GALLERY"
+            color="#FFFFFF"
+            align="center"
+            width="1.5"
+            position="0 0 0.05"
+          ></a-text>
+        </a-entity>
+
+
+
+        <!-- GALLERY -->
+        <a-entity
+          id="AR3Gallery"
+          position="0 0 0.02"
+          visible="false"
+          gallery="galleryId: AR3"
+        >
+          <a-plane
+            width="1"
+            height="1"
+            color="#111111"
+            material="shader: flat; side: double"
+          ></a-plane>
+
+          <a-image class="gallery-image" width="0.8" height="0.7" position="0 0.1 0.02"></a-image>
+
+          <a-plane class="gallery-prev clickable" width="0.1" height="0.2" color="#333333" material="shader: flat; side: double" position="-0.4 0.1 0.08">
+            <a-text value="<" color="#FFFFFF" align="center" width="1" position="0 0 0.01"></a-text>
+          </a-plane>
+
+          <a-plane class="gallery-next clickable" width="0.1" height="0.2" color="#333333" material="shader: flat; side: double" position="0.4 0.1 0.08">
+            <a-text value=">" color="#FFFFFF" align="center" width="1" position="0 0 0.01"></a-text>
+          </a-plane>
+
+          <a-text class="gallery-title" color="#FFFFFF" align="center" width="1.2" position="0 -0.3 0.04" scale="0.5 0.5 0.5"></a-text>
+          <a-text class="gallery-description" color="#FFFFFF" align="center" width="1.05" wrap-count="40" position="0 -0.4 0.04" scale="0.5 0.5 0.5"></a-text>
+          <a-text class="gallery-counter" color="#AAAAAA" align="center" width="0.5" position="0 -0.72 0.04" scale="0.5 0.5 0.5"></a-text>
+        </a-entity>
+</a-entity>
+      <!--------------- END OF IMAGE TARGET --------------------->
+      <!--------------- END OF IMAGE TARGET --------------------->
+    </a-scene>
+  </body>
+</html>
